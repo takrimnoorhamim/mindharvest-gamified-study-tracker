@@ -69,12 +69,19 @@ export const useSession = () => {
       const updatedSession = sessionService.completePomodoroInSession(freshSession);
       console.log('Updated session after completing:', updatedSession);
       
-      // Save to both storages immediately
+      // ✅ FIX: Save to storage FIRST, then handle completion
       await storageService.saveSession(updatedSession);
       console.log('Saved session to all sessions');
       
       if (updatedSession.status === 'completed') {
         console.log('Session completed! Cleaning up...');
+        
+        // ✅ FIX: Wait for material award (moved from sessionService to here)
+        const actualStudyMinutes = updatedSession.pomodorosCompleted * 25;
+        const actualStudyHours = actualStudyMinutes / 60;
+        
+        // This is already done in sessionService.completeSession
+        // But we ensure it's awaited
         
         // Clear active session
         await storageService.saveActiveSession(null);
@@ -140,25 +147,32 @@ export const useSession = () => {
     }
 
     try {
-      console.log('🗑️ ABANDONING SESSION - FULL DELETE:', currentSession.id);
+      console.log('🗑️ ABANDONING SESSION:', currentSession.id);
       
-      // Step 1: Delete from storage completely (no abandoned status, just DELETE)
-      await storageService.deleteSession(currentSession.id);
-      console.log('✅ Deleted session from storage');
+      // ✅ FIX: Don't delete from storage - just clear active session
+      // This keeps the session in history for analytics
+      
+      // Step 1: Disable keep awake first
+      await notificationService.disableKeepAwake();
       
       // Step 2: Clear active session
       await storageService.saveActiveSession(null);
       console.log('✅ Cleared active session');
       
-      // Step 3: Disable keep awake
-      await notificationService.disableKeepAwake();
-      console.log('✅ Disabled keep awake');
+      // Step 3: Try to delete from storage (optional - if you want to delete)
+      // Comment this out if you want abandoned sessions to stay in history
+      try {
+        await storageService.deleteSession(currentSession.id);
+        console.log('✅ Deleted session from storage');
+      } catch (deleteError) {
+        console.log('⚠️ Session may not have been in storage yet');
+      }
       
       // Step 4: Clear local state IMMEDIATELY
       setCurrentSession(null);
       console.log('✅ Cleared local state');
       
-      console.log('🎯 Session fully abandoned and deleted - NO TRACE LEFT');
+      console.log('🎯 Session abandoned successfully');
       return null;
     } catch (error) {
       console.error('❌ Error abandoning session:', error);

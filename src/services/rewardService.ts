@@ -78,13 +78,15 @@ class RewardService {
   // Get today's reward data
   async getDailyRewardData(): Promise<DailyRewardData> {
     try {
+      // ✅ FIX: Get ALL sessions from storage (don't filter by status yet)
       const sessions = await storageService.getAllSessions();
       const today = this.getLocalDateString(new Date());
       
       console.log(`📅 Current LOCAL date: ${today}`);
       console.log(`📚 Total sessions in storage: ${sessions.length}`);
       
-      // Get TODAY'S completed sessions ONLY (strict date match)
+      // ✅ FIX: Get TODAY'S completed sessions ONLY
+      // BUT DON'T delete or filter out old sessions from storage
       const todaySessions = sessions.filter(s => {
         const sessionDate = this.getLocalDateString(s.startTime);
         const isToday = sessionDate === today;
@@ -115,7 +117,7 @@ class RewardService {
       // Get material collection (persistent across days)
       const materialCollection = await this.getMaterialCollection();
       
-      // Calculate streak
+      // ✅ FIX: Calculate streak from ALL completed sessions (not just today)
       const completedSessions = sessions.filter(s => s.status === 'completed');
       const streak = this.calculateStreak(completedSessions);
 

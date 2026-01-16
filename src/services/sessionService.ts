@@ -9,6 +9,14 @@ import storageService from './storageService';
 import rewardService from './rewardService';
 
 class SessionService {
+  // Helper: Get local date string avoiding timezone issues
+  private getLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   // Calculate total pomodoros based on target hours
   calculateTotalPomodoros(targetHours: number): number {
     // Each pomodoro = 25 min focus + 5 min break = 30 min (0.5 hour)
@@ -61,7 +69,7 @@ class SessionService {
     return updatedSession;
   }
 
-  completeSession(session: Session): Session {
+  async completeSession(session: Session): Promise<Session> {
     const randomReward = REWARD_MESSAGES[
       Math.floor(Math.random() * REWARD_MESSAGES.length)
     ];
@@ -86,12 +94,13 @@ class SessionService {
     console.log(`   - Study time: ${actualStudyMinutes} minutes (${actualStudyHours.toFixed(2)} hours)`);
     console.log(`   - Target was: ${completedSession.targetHours} hours`);
     
-    // Award material based on ACTUAL STUDY HOURS (not including breaks)
-    rewardService.awardMaterial(actualStudyHours).then(material => {
+    // ✅ FIX: Award material and WAIT for it to complete
+    try {
+      const material = await rewardService.awardMaterial(actualStudyHours);
       console.log(`✅ Material awarded: ${material}`);
-    }).catch(error => {
+    } catch (error) {
       console.error('❌ Error awarding material:', error);
-    });
+    }
 
     return completedSession;
   }
@@ -121,17 +130,11 @@ class SessionService {
     return SHORT_BREAK_DURATION;
   }
 
-  // Helper: Get local date string avoiding timezone issues
-  private getLocalDateString(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
   async calculateDayStats(date: string): Promise<DayStats> {
+    // ✅ FIX: Get ALL sessions from storage (not just today's)
     const sessions = await storageService.getAllSessions();
     
+    // Filter for THIS specific date only
     const daySessions = sessions.filter(s => {
       const sessionDate = this.getLocalDateString(s.startTime);
       return sessionDate === date;
@@ -176,6 +179,7 @@ class SessionService {
 
     console.log(`Day stats for ${date} (FOCUS TIME ONLY):`, stats);
 
+    // ✅ Save stats for this date
     await storageService.saveDayStats(stats);
     return stats;
   }
