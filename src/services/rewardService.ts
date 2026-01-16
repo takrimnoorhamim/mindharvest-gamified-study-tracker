@@ -73,22 +73,35 @@ class RewardService {
       const sessions = await storageService.getAllSessions();
       const today = new Date().toISOString().split('T')[0];
       
-      // Get today's completed sessions
+      console.log(`📅 Current date: ${today}`);
+      console.log(`📚 Total sessions in storage: ${sessions.length}`);
+      
+      // Get TODAY'S completed sessions ONLY (strict date match)
       const todaySessions = sessions.filter(s => {
         const sessionDate = s.startTime.toISOString().split('T')[0];
-        return sessionDate === today && s.status === 'completed';
+        const isToday = sessionDate === today;
+        const isCompleted = s.status === 'completed';
+        
+        if (isCompleted) {
+          console.log(`  Session ${s.id}: date=${sessionDate}, isToday=${isToday}`);
+        }
+        
+        return isToday && isCompleted;
       });
 
-      // Calculate total hours studied today (focus time only, no breaks)
+      console.log(`✅ Today's completed sessions: ${todaySessions.length}`);
+
+      // Calculate total hours studied TODAY ONLY (focus time only, no breaks)
       let totalStudyMinutes = 0;
       for (const session of todaySessions) {
         // Each pomodoro = 25 min of actual study
         const studyMinutes = session.pomodorosCompleted * 25;
         totalStudyMinutes += studyMinutes;
+        console.log(`  → Session: ${session.pomodorosCompleted} pomodoros = ${studyMinutes} min`);
       }
       const totalStudyHours = totalStudyMinutes / 60;
 
-      // Calculate today's level based on hours studied
+      // Calculate today's level based on hours studied TODAY
       const todayLevel = this.calculateDailyLevel(totalStudyHours);
       
       // Get material collection (persistent across days)
@@ -98,7 +111,7 @@ class RewardService {
       const completedSessions = sessions.filter(s => s.status === 'completed');
       const streak = this.calculateStreak(completedSessions);
 
-      console.log(`📊 Today's progress: ${totalStudyHours.toFixed(2)}h studied → Level ${todayLevel}`);
+      console.log(`📊 TODAY's progress: ${totalStudyHours.toFixed(2)}h → Level ${todayLevel}`);
 
       return {
         todayLevel,
