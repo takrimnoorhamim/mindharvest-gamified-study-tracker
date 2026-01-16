@@ -31,16 +31,21 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci
       
-      - name: 🔧 Expo Prebuild
-        run: npx expo prebuild --platform android --clean
+      - name: 🔧 Install Expo CLI
+        run: npm install -g @expo/cli
       
-      - name: 🏗️ Make Gradlew Executable
+      - name: 🏗️ Expo Prebuild
+        run: npx expo prebuild --platform android --clean
+        env:
+          EXPO_NO_DOTENV: 1
+      
+      - name: 🔑 Make Gradlew Executable
         working-directory: android
         run: chmod +x gradlew
       
-      - name: 🚀 Build APK
+      - name: 🚀 Build APK (Release)
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
       
       - name: 📱 Upload APK Artifact
         uses: actions/upload-artifact@v4
@@ -57,4 +62,4 @@ jobs:
           echo "📥 **Download:** Go to Actions → This workflow → Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🎯 **App Name:** MindHarvest" >> $GITHUB_STEP_SUMMARY
-          echo "📦 **Version:** $(cat package.json | grep version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]')" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Build Type:** Release APK" >> $GITHUB_STEP_SUMMARY

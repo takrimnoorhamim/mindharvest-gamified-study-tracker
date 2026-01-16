@@ -35,20 +35,14 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-font",
-      [
-        "expo-av",
-        {
-          "microphonePermission": false
-        }
-      ]
-    ],
     "extra": {
       "eas": {
         "projectId": "26c5df12-2876-4061-bebd-db4d3457361a"
       }
     },
-    "owner": "malaytakrimnoorhamim"
+    "owner": "malaytakrimnoorhamim",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
