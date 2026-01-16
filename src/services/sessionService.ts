@@ -121,11 +121,19 @@ class SessionService {
     return SHORT_BREAK_DURATION;
   }
 
+  // Helper: Get local date string avoiding timezone issues
+  private getLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   async calculateDayStats(date: string): Promise<DayStats> {
     const sessions = await storageService.getAllSessions();
     
     const daySessions = sessions.filter(s => {
-      const sessionDate = s.startTime.toISOString().split('T')[0];
+      const sessionDate = this.getLocalDateString(s.startTime);
       return sessionDate === date;
     });
 
@@ -178,7 +186,7 @@ class SessionService {
     for (let i = 0; i < 7; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = this.getLocalDateString(date);
       
       const dayStats = await this.calculateDayStats(dateString);
       weekStats.push(dayStats);

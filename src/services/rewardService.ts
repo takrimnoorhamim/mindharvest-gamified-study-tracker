@@ -67,18 +67,26 @@ class RewardService {
     { level: 14, title: 'Legendary Yggdrasil', emoji: '🔱', color: '#27ae60', hoursNeeded: 24 },
   ];
 
+  // Helper: Get local date string (YYYY-MM-DD) avoiding timezone issues
+  private getLocalDateString(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   // Get today's reward data
   async getDailyRewardData(): Promise<DailyRewardData> {
     try {
       const sessions = await storageService.getAllSessions();
-      const today = new Date().toISOString().split('T')[0];
+      const today = this.getLocalDateString(new Date());
       
-      console.log(`📅 Current date: ${today}`);
+      console.log(`📅 Current LOCAL date: ${today}`);
       console.log(`📚 Total sessions in storage: ${sessions.length}`);
       
       // Get TODAY'S completed sessions ONLY (strict date match)
       const todaySessions = sessions.filter(s => {
-        const sessionDate = s.startTime.toISOString().split('T')[0];
+        const sessionDate = this.getLocalDateString(s.startTime);
         const isToday = sessionDate === today;
         const isCompleted = s.status === 'completed';
         
@@ -236,16 +244,16 @@ class RewardService {
       b.startTime.getTime() - a.startTime.getTime()
     );
 
-    // Get unique dates
+    // Get unique LOCAL dates
     const dates = [...new Set(sorted.map(s => 
-      s.startTime.toISOString().split('T')[0]
+      this.getLocalDateString(s.startTime)
     ))];
 
     let currentStreak = 0;
     let longestStreak = 0;
     let tempStreak = 0;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.getLocalDateString(new Date());
     
     // Check if studied today or yesterday
     const lastDate = dates[0];

@@ -53,15 +53,23 @@ export const useStorage = () => {
   // Get sessions by date
   const getSessionsByDate = (date: string): Session[] => {
     return allSessions.filter(s => {
-      const sessionDate = s.startTime.toISOString().split('T')[0];
+      const year = s.startTime.getFullYear();
+      const month = String(s.startTime.getMonth() + 1).padStart(2, '0');
+      const day = String(s.startTime.getDate()).padStart(2, '0');
+      const sessionDate = `${year}-${month}-${day}`;
       return sessionDate === date;
     });
   };
 
   // Get today's stats
   const getTodayStats = async (): Promise<DayStats> => {
-    const today = new Date().toISOString().split('T')[0];
-    return await sessionService.calculateDayStats(today);
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayString = `${year}-${month}-${day}`;
+    
+    return await sessionService.calculateDayStats(todayString);
   };
 
   // Get week stats
