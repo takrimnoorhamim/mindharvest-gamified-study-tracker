@@ -78,15 +78,14 @@ class RewardService {
   // Get today's reward data
   async getDailyRewardData(): Promise<DailyRewardData> {
     try {
-      // ✅ FIX: Get ALL sessions from storage (don't filter by status yet)
+      // ✅ FIX: Get ALL sessions (don't filter or delete anything)
       const sessions = await storageService.getAllSessions();
       const today = this.getLocalDateString(new Date());
       
       console.log(`📅 Current LOCAL date: ${today}`);
       console.log(`📚 Total sessions in storage: ${sessions.length}`);
       
-      // ✅ FIX: Get TODAY'S completed sessions ONLY
-      // BUT DON'T delete or filter out old sessions from storage
+      // Get TODAY'S completed sessions ONLY for level calculation
       const todaySessions = sessions.filter(s => {
         const sessionDate = this.getLocalDateString(s.startTime);
         const isToday = sessionDate === today;
@@ -101,23 +100,22 @@ class RewardService {
 
       console.log(`✅ Today's completed sessions: ${todaySessions.length}`);
 
-      // Calculate total hours studied TODAY ONLY (focus time only, no breaks)
+      // Calculate total hours studied TODAY ONLY
       let totalStudyMinutes = 0;
       for (const session of todaySessions) {
-        // Each pomodoro = 25 min of actual study
         const studyMinutes = session.pomodorosCompleted * 25;
         totalStudyMinutes += studyMinutes;
         console.log(`  → Session: ${session.pomodorosCompleted} pomodoros = ${studyMinutes} min`);
       }
       const totalStudyHours = totalStudyMinutes / 60;
 
-      // Calculate today's level based on hours studied TODAY
+      // Calculate today's level
       const todayLevel = this.calculateDailyLevel(totalStudyHours);
       
-      // Get material collection (persistent across days)
+      // Get material collection (persistent)
       const materialCollection = await this.getMaterialCollection();
       
-      // ✅ FIX: Calculate streak from ALL completed sessions (not just today)
+      // ✅ FIX: Calculate streak from ALL completed sessions (not filtered)
       const completedSessions = sessions.filter(s => s.status === 'completed');
       const streak = this.calculateStreak(completedSessions);
 
